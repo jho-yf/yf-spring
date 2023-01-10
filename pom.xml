@@ -16,6 +16,7 @@
 
     <modules>
         <module>yf-spring-expression</module>
+        <module>yf-spring-security</module>
     </modules>
 
     <properties>
