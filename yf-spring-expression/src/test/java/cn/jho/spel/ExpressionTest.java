@@ -1,8 +1,15 @@
 package cn.jho.spel;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.expression.spel.SpelEvaluationException;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 /**
  * ExpressionTest
@@ -119,6 +126,63 @@ class ExpressionTest extends AbstractSpELTest {
         // 实例化对象
         assertEquals("Book{name='Spring in action', price=66.6}",
                 spEL("#{ new cn.jho.pojo.Book('Spring in action', 66.6) }").toString());
+    }
+
+    /**
+     * 集合表达式
+     */
+    @Test
+    void testCollection() {
+        // 构造集合
+        assertEquals(Arrays.asList("aaa", "bbb", "ccc"),
+                spEL("#{ { 'aaa', 'bbb', 'ccc' } }", List.class));
+        assertEquals(Arrays.asList(1, 2, 3),
+                spEL("#{ { 1, 2, 3 } }", Collection.class));
+
+        // 根据索引获取元素
+        List<String> list = Arrays.asList("aaa", "bbb", "ccc");
+        StandardEvaluationContext context = new StandardEvaluationContext();
+        context.setVariable("data", list);
+        assertEquals("aaa", spEL("#{ #data[0] }", context));
+
+        // 设置集合元素
+        assertEquals("666", spEL("#{ #data[1] = '666' }", context));
+        assertEquals(Arrays.asList("aaa", "666", "ccc"), list);
+
+        // 迭代数据操作
+        assertEquals(Arrays.asList("str-aaa", "str-666", "str-ccc"), spEL("#{ #data.!['str-' + #this] }", context));
+    }
+
+    /**
+     * Map集合表达式
+     */
+    @Test
+    void testMap() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("year", "2022");
+        map.put("month", "11");
+        map.put("date", "14");
+        map.put("hour", "23");
+        map.put("minute", "39");
+
+        StandardEvaluationContext context = new StandardEvaluationContext();
+        context.setVariable("data", map);
+
+        // 取值
+        assertEquals("39", spEL("#{ #data['minute'] }", context));
+
+        // 修改值
+        assertEquals("2023", spEL("#{ #data['year'] = '2023' }", context));
+        assertEquals("2023", map.get("year"));
+
+        // 迭代数据操作 map转list
+        assertEquals(Arrays.asList("year:2023", "month:11", "date:14", "hour:23", "minute:39"),
+                spEL("#{ #data.![#this.key + ':' + #this.value] }", context));
+
+        // 数据筛选
+        assertEquals(new HashMap<String, String>() {{
+            put("year", "2023");
+        }}, spEL("#{ #data.?[#this.key.contains('year')] }", context));
     }
 
 }
